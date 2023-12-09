@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio Streaming</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <button id="startRecording">Start Recording</button>
+    <button id="stopRecording" disabled>Stop Recording</button>
+
+    <script>
+      $(document).ready(() => {
+        const socket = io();
+
+        let mediaRecorder;
+        let audioChunks = [];
+
+        $("#startRecording").on("click", () => {
+          navigator.mediaDevices
+            .getUserMedia({ audio: true })
+            .then((stream) => {
+              mediaRecorder = new MediaRecorder(stream);
+
+              mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                  audioChunks.push(event.data);
+                }
+              };
+
+              mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                // Send the audio data to the server
+                socket.emit("audio", { audioUrl });
+
+                audioChunks = [];
+              };
+
+              mediaRecorder.start();
+              $("#startRecording").prop("disabled", true);
+              $("#stopRecording").prop("disabled", false);
+            })
+            .catch((error) => {
+              console.error("Error accessing microphone:", error);
+            });
+        });
+
+        $("#stopRecording").on("click", () => {
+          mediaRecorder.stop();
+          $("#startRecording").prop("disabled", false);
+          $("#stopRecording").prop("disabled", true);
+        });
+      });
+    </script>
+  </body>
+</html>
