@@ -1,0 +1,30 @@
+{
+  "name": "microphone-stream",
+  "version": "1.0.0",
+  "description": "stream microphone recorder and send to node js server with socket",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmad118128/microphone-stream.git"
+  },
+  "keywords": [
+    "audiostream",
+    "microphonstream",
+    "nodejs"
+  ],
+  "author": "ahmad safari",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ahmad118128/microphone-stream/issues"
+  },
+  "homepage": "https://github.com/ahmad118128/microphone-stream#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "http": "^0.0.1-security",
+    "socket.io": "^4.7.2"
+  }
+}

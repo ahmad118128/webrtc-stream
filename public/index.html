@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Control Microphone Stream with Socket.IO</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <button id="start">Start Streaming</button>
+    <button id="stop" style="display: none">Stop Streaming</button>
+
+    <script>
+      $(document).ready(function () {
+        const socket = io();
+        let audioContext = null;
+        let mediaStream = null;
+        let source = null;
+        let processor = null;
+
+        $("#start").click(function () {
+          $(this).hide();
+          $("#stop").show();
+          navigator.mediaDevices
+            .getUserMedia({ audio: true })
+            .then((stream) => {
+              audioContext = new (window.AudioContext ||
+                window.webkitAudioContext)();
+              mediaStream = stream;
+              source = audioContext.createMediaStreamSource(stream);
+              processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+              source.connect(processor);
+              processor.connect(audioContext.destination);
+
+              processor.onaudioprocess = function (e) {
+                const inputData = e.inputBuffer.getChannelData(0);
+                // This check is important as the processor may still have a few callbacks
+                // that are invoked after the stream is stopped.
+                if (mediaStream.active) {
+                  socket.emit("audio-chunk", inputData.buffer);
+                }
+              };
+            })
+            .catch((error) => {
+              console.error("Error accessing the microphone", error);
+            });
+        });
+
+        $("#stop").click(function () {
+          $(this).hide();
+          $("#start").show();
+
+          // Disconnect the audio nodes
+          if (processor) {
+            processor.disconnect();
+            processor.onaudioprocess = null;
+            processor = null;
+          }
+
+          if (source) {
+            source.disconnect();
+            source = null;
+          }
+
+          if (audioContext) {
+            audioContext.close(); // Close the audio context
+            audioContext = null;
+          }
+
+          if (mediaStream) {
+            mediaStream.getTracks().forEach((track) => track.stop()); // Stop the media stream
+            mediaStream = null;
+          }
+
+          socket.emit("stream-stopped");
+        });
+      });
+    </script>
+  </body>
+</html>
