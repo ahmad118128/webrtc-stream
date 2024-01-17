@@ -1,3 +1,3 @@
-# $npm install
-# $node server
-# opent http://localhost:8000/
+$npm install
+$node server
+opent http://localhost:8000/
