@@ -17,9 +17,20 @@ io.on("connection", (socket) => {
     // Here we simply log the chunk, but you could process or save it as needed
     console.log("Received audio chunk", chunk);
   });
+  let count = 0;
+  socket.on("webcam-chunk", ({ video, audio }) => {
+    // Here we simply log the chunk, but you could process or save it as needed
+    console.log("Received webcam chunk --------------", count);
+    count += 1;
+  });
 
-  socket.on("stream-stopped", () => {
-    console.log("User stopped the stream");
+  socket.on("microphone-stream-stopped", () => {
+    console.log("User stopped the microphone stream");
+    // Handle the stop event, you might want to clean or reset certain data.
+  });
+
+  socket.on("webcam-stream-stopped", () => {
+    console.log("User stopped the webcam stream");
     // Handle the stop event, you might want to clean or reset certain data.
   });
 
@@ -28,6 +39,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("listening on *:3000");
+server.listen(8000, () => {
+  console.log("listening on *:8000");
 });

@@ -2,13 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Control Microphone Stream with Socket.IO</title>
+    <title>WebRTC Stream with Socket.IO</title>
+    <link rel="stylesheet" href="styles.css" />
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
   <body>
-    <button id="start">Start Streaming</button>
-    <button id="stop" style="display: none">Stop Streaming</button>
+    <div>
+      <button id="start">Start microphone Streaming</button>
+      <button id="stop" style="display: none">Stop Streaming</button>
+      <button id="startBtn">Start Webcam</button>
+      <button id="stopBtn">Stop Webcam</button>
+    </div>
+    <div>
+      <video id="video" width="640" height="480" autoplay></video>
+      <audio id="audio" autoplay></audio>
+    </div>
 
     <script>
       $(document).ready(function () {
@@ -73,8 +82,68 @@
             mediaStream = null;
           }
 
-          socket.emit("stream-stopped");
+          socket.emit("microphone-stream-stopped");
         });
+      });
+    </script>
+
+    <script>
+      $(document).ready(() => {
+        const socket = io();
+
+        let videoStream, audioStream;
+        let animationFrameId;
+
+        const video = document.getElementById("video");
+        const audio = document.getElementById("audio");
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+
+        startBtn.addEventListener("click", startWebcam);
+        stopBtn.addEventListener("click", stopWebcam);
+        function startWebcam() {
+          navigator.mediaDevices
+            .getUserMedia({ video: true, audio: true })
+            .then((userStream) => {
+              videoStream = userStream;
+              video.srcObject = videoStream;
+
+              // Separate audio stream for better control
+              audioStream = new MediaStream(videoStream.getAudioTracks());
+              audio.srcObject = audioStream;
+
+              const canvas = document.createElement("canvas");
+              const ctx = canvas.getContext("2d");
+              canvas.width = video.width;
+              canvas.height = video.height;
+
+              const sendImage = () => {
+                ctx.drawImage(video, 0, 0, video.width, video.height);
+                const imageData = canvas.toDataURL("image/jpeg");
+                console.count("---webcam-chunk---");
+                socket.emit("webcam-chunk", {
+                  video: imageData,
+                  audio: audioStream,
+                });
+                animationFrameId = requestAnimationFrame(sendImage);
+              };
+
+              sendImage();
+            })
+            .catch((err) => {
+              console.error("Error accessing webcam:", err);
+            });
+        }
+
+        function stopWebcam() {
+          if (videoStream) {
+            videoStream.getTracks().forEach((track) => track.stop());
+            video.srcObject = null;
+            audio.srcObject = null;
+            cancelAnimationFrame(animationFrameId);
+            socket.emit("webcam-stream-stopped");
+          }
+        }
       });
     </script>
   </body>
