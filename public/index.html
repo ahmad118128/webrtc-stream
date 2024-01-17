@@ -44,8 +44,8 @@
 
               processor.onaudioprocess = function (e) {
                 const inputData = e.inputBuffer.getChannelData(0);
-                // This check is important as the processor may still have a few callbacks
-                // that are invoked after the stream is stopped.
+                console.count("----- #Client Send audio chunk -----");
+
                 if (mediaStream.active) {
                   socket.emit("audio-chunk", inputData.buffer);
                 }
@@ -120,7 +120,8 @@
               const sendImage = () => {
                 ctx.drawImage(video, 0, 0, video.width, video.height);
                 const imageData = canvas.toDataURL("image/jpeg");
-                console.count("---webcam-chunk---");
+                console.count("----- #Client Send webcam chunk -----");
+
                 socket.emit("webcam-chunk", {
                   video: imageData,
                   audio: audioStream,

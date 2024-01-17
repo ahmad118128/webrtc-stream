@@ -7,31 +7,25 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// This endpoint serves the static files from the public directory (e.g., index.html)
 app.use(express.static("public"));
 
 io.on("connection", (socket) => {
   console.log("a user connected");
 
   socket.on("audio-chunk", (chunk) => {
-    // Here we simply log the chunk, but you could process or save it as needed
-    console.log("Received audio chunk", chunk);
+    console.count("----- #Server Received audio chunk -----");
   });
-  let count = 0;
+
   socket.on("webcam-chunk", ({ video, audio }) => {
-    // Here we simply log the chunk, but you could process or save it as needed
-    console.log("Received webcam chunk --------------", count);
-    count += 1;
+    console.count("----- #Server Received webcam chunk -----");
   });
 
   socket.on("microphone-stream-stopped", () => {
     console.log("User stopped the microphone stream");
-    // Handle the stop event, you might want to clean or reset certain data.
   });
 
   socket.on("webcam-stream-stopped", () => {
     console.log("User stopped the webcam stream");
-    // Handle the stop event, you might want to clean or reset certain data.
   });
 
   socket.on("disconnect", () => {
