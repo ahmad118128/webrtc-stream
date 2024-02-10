@@ -21,10 +21,10 @@
         const audioContext = new (window.AudioContext ||
           window.webkitAudioContext)();
 
-        audioContext.audioWorklet.addModule("white-noise-processor.js");
-
         $("#startRecording").on("click", () => {
           $(document).one("click", () => {
+            socket.emit("prepare");
+
             navigator.mediaDevices
               .getUserMedia({ audio: true })
               .then((stream) => {

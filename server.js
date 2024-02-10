@@ -1,27 +1,24 @@
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
-const { spawn } = require("child_process");
 const { exec } = require("child_process");
-const ffmpeg = require("fluent-ffmpeg");
 const app = express();
 const server = http.createServer(app);
 const fs = require("fs");
-const FILE_PATH = "./recorded_audio.webm";
-
+const FILE_PATH = `./recorded_audio.webm`;
 const io = socketIo(server);
-
 app.use(express.static("public")); // Assuming your client files are in the 'public' folder
 app.use(
   "/socket.io",
   express.static(__dirname + "/node_modules/socket.io-client/dist")
 );
+
 let ffmpegProcess;
 let fileWriter;
 
 io.on("connection", (socket) => {
   console.log("A user connected");
-  socket.on("audio", func2);
+  socket.on("audio", func3);
 
   function func1(data) {
     const bufferData = Buffer.from(data);
@@ -54,6 +51,14 @@ io.on("connection", (socket) => {
     saveAudio(data);
   }
 
+  function func3(data) {
+    if (!ffmpegProcess) {
+      startFFmpegProcess();
+    }
+
+    ffmpegProcess.stdin.write(data);
+  }
+
   socket.on("stop", (data) => {
     if (ffmpegProcess) {
       ffmpegProcess.kill("SIGTERM"); // Terminate the ffmpeg process
@@ -61,11 +66,31 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("prepare", (data) => {
+    console.log("prepare");
+  });
+
   function saveAudio(data) {
     if (!fileWriter) {
       fileWriter = fs.createWriteStream(FILE_PATH);
     }
     fileWriter.write(data);
+  }
+
+  function startFFmpegProcess() {
+    const command = `ffmpeg -i pipe:0 -c:a libopus -b:a 128k -ar 48000 -f webm ${FILE_PATH}`;
+
+    ffmpegProcess = exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error: ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        console.error(`stderr: ${stderr}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+    });
   }
 
   socket.on("disconnect", () => {
